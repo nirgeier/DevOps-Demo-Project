@@ -28,8 +28,11 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY --chown=appuser:appuser app/ ./app/
 
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Switch to non-root user
-USER root
+USER appuser
 
 # Expose port
 EXPOSE 8080
