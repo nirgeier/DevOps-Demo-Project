@@ -54,7 +54,7 @@ check_requirements() {
 install_devops_tools() {
     log_section "Installing DevOps Tools"
     
-    read -p "Do you want to install kubectl, helm, k9s, and uv? (y/N): " -n 1 -r
+    read -p "Do you want to install kubectl, helm, k9s, uv, Docker, and ArgoCD CLI? (y/N): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         log_warn "Skipping DevOps tools installation"
@@ -68,6 +68,10 @@ install_devops_tools() {
     log_info "Installing uv..."
     "$SCRIPT_DIR/install-uv.sh"
     
+    # Install Docker
+    log_info "Installing Docker..."
+    "$SCRIPT_DIR/install-docker.sh"
+    
     # Install kubectl
     log_info "Installing kubectl..."
     "$SCRIPT_DIR/install-kubectl.sh"
@@ -79,6 +83,14 @@ install_devops_tools() {
     # Install k9s
     log_info "Installing k9s..."
     "$SCRIPT_DIR/install-k9s.sh"
+    
+    # Install ArgoCD CLI (optional)
+    read -p "Do you want to install ArgoCD CLI? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        log_info "Installing ArgoCD CLI..."
+        "$SCRIPT_DIR/install-argocd.sh"
+    fi
     
     log_info "✅ DevOps tools installed"
 }

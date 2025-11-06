@@ -111,9 +111,11 @@ Or install tools individually:
 ```bash
 chmod +x scripts/*.sh
 ./scripts/install-uv.sh
+./scripts/install-docker.sh
 ./scripts/install-kubectl.sh
 ./scripts/install-helm.sh
 ./scripts/install-k9s.sh
+./scripts/install-argocd.sh  # Optional
 ```
 
 ## 🚀 Quick Start

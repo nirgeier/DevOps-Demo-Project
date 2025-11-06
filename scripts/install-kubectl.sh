@@ -61,11 +61,11 @@ log_info "Downloading kubectl from: $DOWNLOAD_URL"
 TMP_DIR=$(mktemp -d)
 trap "rm -rf $TMP_DIR" EXIT
 
-curl -LO "$DOWNLOAD_URL" -o "$TMP_DIR/kubectl"
+curl -L "$DOWNLOAD_URL" -o "$TMP_DIR/kubectl"
 
 # Download checksum
 log_info "Downloading checksum..."
-curl -LO "${DOWNLOAD_URL}.sha256" -o "$TMP_DIR/kubectl.sha256"
+curl -L "${DOWNLOAD_URL}.sha256" -o "$TMP_DIR/kubectl.sha256"
 
 # Verify checksum
 log_info "Verifying checksum..."

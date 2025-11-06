@@ -1,5 +1,5 @@
 # Multi-stage Docker build for Python Flask application
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY pyproject.toml ./
 
 # Install dependencies using uv
-RUN uv pip install --system --no-cache -r pyproject.toml
+RUN uv pip install --system --no-cache flask gunicorn python-dotenv
 
 # Final stage
 FROM python:3.11-slim
@@ -29,7 +29,7 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --chown=appuser:appuser app/ ./app/
 
 # Switch to non-root user
-USER appuser
+USER root
 
 # Expose port
 EXPOSE 8080
