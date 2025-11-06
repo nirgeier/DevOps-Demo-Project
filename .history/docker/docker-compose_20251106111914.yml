@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  devops-demo:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: devops-demo:latest
+    container_name: devops-demo-app
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_VERSION=1.0.0
+      - ENVIRONMENT=development
+      - PORT=8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - devops-network
+
+networks:
+  devops-network:
+    driver: bridge

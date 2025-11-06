@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: devops-demo
+  labels:
+    name: devops-demo
+    environment: production

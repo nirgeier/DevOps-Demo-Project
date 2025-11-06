@@ -1,0 +1,82 @@
+name: Release Management
+
+on:
+  push:
+    branches:
+      - 'release/**'
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  create-release-pr:
+    name: Create Release PR
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/heads/release/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Extract version from branch
+        id: version
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          VERSION=${BRANCH_NAME#release/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Create Pull Request to main
+        uses: repo-sync/pull-request@v2
+        with:
+          destination_branch: "main"
+          pr_title: "Release ${{ steps.version.outputs.version }}"
+          pr_body: |
+            ## Release ${{ steps.version.outputs.version }}
+            
+            This PR contains the changes for version ${{ steps.version.outputs.version }}.
+            
+            ### Checklist
+            - [ ] All tests pass
+            - [ ] Documentation updated
+            - [ ] CHANGELOG updated
+            - [ ] Version bumped
+            
+            **Note**: Merging this PR will automatically create a new release and deploy to production.
+          pr_label: "release"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+  
+  tag-and-release:
+    name: Tag and Create Release
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && startsWith(github.head_ref, 'release/')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Extract version from branch
+        id: version
+        run: |
+          BRANCH_NAME=${{ github.head_ref }}
+          VERSION=${BRANCH_NAME#release/}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Create and push tag
+        run: |
+          git config --global user.name 'GitHub Actions Bot'
+          git config --global user.email 'actions@github.com'
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Merge main back to develop
+        run: |
+          git checkout develop
+          git merge main --no-ff -m "Merge release v${{ steps.version.outputs.version }} into develop"
+          git push origin develop
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

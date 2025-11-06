@@ -1,0 +1,57 @@
+name: GitFlow - Branch Management
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate-branch:
+    name: Validate GitFlow Branch
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check branch naming
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+          BASE_BRANCH="${{ github.base_ref }}"
+          
+          echo "Source branch: $BRANCH_NAME"
+          echo "Target branch: $BASE_BRANCH"
+          
+          # Validate GitFlow branch naming
+          if [[ "$BRANCH_NAME" =~ ^(feature|bugfix|hotfix|release)/.+ ]] || [[ "$BRANCH_NAME" == "develop" ]] || [[ "$BRANCH_NAME" == "main" ]]; then
+            echo "✅ Valid GitFlow branch name"
+          else
+            echo "❌ Invalid branch name. Must follow GitFlow convention:"
+            echo "  - feature/xxx"
+            echo "  - bugfix/xxx"
+            echo "  - hotfix/xxx"
+            echo "  - release/x.x.x"
+            echo "  - develop"
+            echo "  - main"
+            exit 1
+          fi
+          
+          # Validate merge targets
+          if [[ "$BRANCH_NAME" == feature/* ]] || [[ "$BRANCH_NAME" == bugfix/* ]]; then
+            if [[ "$BASE_BRANCH" != "develop" ]]; then
+              echo "❌ Feature and bugfix branches must merge to 'develop'"
+              exit 1
+            fi
+          fi
+          
+          if [[ "$BRANCH_NAME" == release/* ]]; then
+            if [[ "$BASE_BRANCH" != "main" ]] && [[ "$BASE_BRANCH" != "develop" ]]; then
+              echo "❌ Release branches must merge to 'main' or 'develop'"
+              exit 1
+            fi
+          fi
+          
+          if [[ "$BRANCH_NAME" == hotfix/* ]]; then
+            if [[ "$BASE_BRANCH" != "main" ]]; then
+              echo "❌ Hotfix branches must merge to 'main'"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ Valid merge target"

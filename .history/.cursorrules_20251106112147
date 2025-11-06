@@ -1,0 +1,348 @@
+# DevOps Demo Project - Custom Instructions
+
+This document provides custom instructions and guidelines for working with this DevOps demonstration project.
+
+## Project Overview
+
+This is a comprehensive DevOps demonstration project showcasing:
+- Modern CI/CD pipeline
+- Container orchestration with Kubernetes
+- GitOps with ArgoCD
+- Automated testing and deployment
+- GitFlow workflow
+
+## Quick Reference
+
+### Essential Commands
+
+```bash
+# Setup
+./scripts/init.sh                          # Initialize entire project
+source .venv/bin/activate                  # Activate Python environment
+
+# Development
+python app/main.py                         # Run locally
+pytest tests/ -v                           # Run tests
+docker-compose up                          # Run with Docker
+
+# Deployment
+helm install devops-demo helm/devops-demo  # Deploy to Kubernetes
+kubectl apply -f argocd/application.yaml   # GitOps deployment
+```
+
+## Development Workflow
+
+### Starting New Work
+
+1. **Update develop branch**
+   ```bash
+   git checkout develop
+   git pull origin develop
+   ```
+
+2. **Create feature branch**
+   ```bash
+   git checkout -b feature/your-feature
+   ```
+
+3. **Develop and test**
+   ```bash
+   # Make changes
+   pytest tests/ -v
+   flake8 app/
+   ```
+
+4. **Commit using conventional commits**
+   ```bash
+   git commit -m "feat: add new feature"
+   ```
+
+5. **Push and create PR to develop**
+   ```bash
+   git push origin feature/your-feature
+   ```
+
+## Architecture Principles
+
+### Application Design
+
+- **Stateless**: Application should be stateless for easy scaling
+- **Health Checks**: Implement /health and /ready endpoints
+- **12-Factor App**: Follow 12-factor application principles
+- **Security**: Run as non-root, read-only filesystem
+
+### Infrastructure as Code
+
+- **Helm Charts**: All Kubernetes manifests in Helm charts
+- **GitOps**: ArgoCD for automated deployments
+- **Versioning**: Semantic versioning for releases
+- **Documentation**: Keep docs in sync with code
+
+## Testing Strategy
+
+### Unit Tests
+- Cover all business logic
+- Mock external dependencies
+- Target >80% coverage
+
+### Integration Tests
+- Test API endpoints
+- Test health checks
+- Test error handling
+
+### Container Tests
+- Build succeeds
+- Container starts correctly
+- Health checks pass
+
+## CI/CD Pipeline
+
+### Continuous Integration
+- Triggered on: All branches, PRs
+- Steps: Lint → Test → Build → Container Test
+
+### Continuous Deployment
+- Triggered on: main branch, tags
+- Steps: Build → Push → Deploy → Verify
+
+### Release Process
+1. Create release/x.y.z from develop
+2. Update version and changelog
+3. PR to main
+4. Auto-tag and deploy
+5. Merge back to develop
+
+## Configuration Management
+
+### Environment Variables
+
+```bash
+# Application
+APP_VERSION=1.0.0        # Application version
+PORT=8080                # Server port
+ENVIRONMENT=production   # Deployment environment
+
+# Docker
+DOCKER_BUILDKIT=1        # Enable BuildKit
+
+# Kubernetes
+KUBECONFIG=~/.kube/config
+```
+
+### Secrets Management
+
+- Never commit secrets
+- Use Kubernetes secrets
+- Use .env.local for local development
+- GitHub secrets for CI/CD
+
+## Deployment Environments
+
+### Local Development
+- Docker Compose for quick testing
+- Port 8080 exposed
+
+### Staging/Development
+- Deployed from develop branch
+- ArgoCD auto-sync enabled
+- Namespace: devops-demo-dev
+
+### Production
+- Deployed from main/tags only
+- Manual approval for sensitive changes
+- Namespace: devops-demo
+- High availability (2+ replicas)
+
+## Monitoring and Observability
+
+### Health Checks
+```bash
+curl http://localhost:8080/health
+curl http://localhost:8080/ready
+```
+
+### Logs
+```bash
+# Docker
+docker logs -f <container>
+
+# Kubernetes
+kubectl logs -f deployment/devops-demo -n devops-demo
+
+# k9s (interactive)
+k9s -n devops-demo
+```
+
+### Metrics
+- Prometheus annotations enabled
+- HPA configured for auto-scaling
+- Resource limits set
+
+## Troubleshooting
+
+### Common Issues
+
+**Build fails**
+```bash
+# Clear cache and rebuild
+docker system prune -a
+docker build --no-cache -f docker/Dockerfile .
+```
+
+**Tests fail**
+```bash
+# Update dependencies
+uv pip install -e ".[dev]"
+# Run specific test
+pytest tests/test_main.py::test_name -v
+```
+
+**Pod not starting**
+```bash
+# Check pod status
+kubectl describe pod <pod-name> -n devops-demo
+# Check logs
+kubectl logs <pod-name> -n devops-demo
+```
+
+**ArgoCD not syncing**
+```bash
+# Force refresh
+argocd app get devops-demo --refresh
+# Manual sync
+argocd app sync devops-demo
+```
+
+## Best Practices
+
+### Code Quality
+- Follow PEP 8 style guide
+- Use type hints
+- Write docstrings
+- Keep functions small and focused
+
+### Git Commits
+- Use conventional commits format
+- Write meaningful commit messages
+- Keep commits atomic
+- Reference issues in commits
+
+### Docker
+- Multi-stage builds
+- Minimize layers
+- Use specific base image tags
+- Run as non-root user
+
+### Kubernetes
+- Set resource limits
+- Use readiness/liveness probes
+- Enable horizontal pod autoscaling
+- Use namespaces for isolation
+
+## Security Considerations
+
+### Container Security
+- Non-root user (UID 1000)
+- Read-only root filesystem
+- No privilege escalation
+- Dropped capabilities
+
+### Network Security
+- Implement network policies
+- Use TLS for ingress
+- Restrict service exposure
+
+### Dependency Management
+- Scan for vulnerabilities
+- Keep dependencies updated
+- Pin versions in production
+
+## Performance Optimization
+
+### Application
+- Use gunicorn for production
+- Configure worker count
+- Enable keep-alive
+- Implement caching
+
+### Kubernetes
+- Configure HPA appropriately
+- Set proper resource requests/limits
+- Use pod anti-affinity
+- Consider node affinity
+
+## Documentation Standards
+
+### Code Documentation
+- Docstrings for all public functions
+- Comments for complex logic
+- README for each major component
+
+### API Documentation
+- Document all endpoints
+- Include request/response examples
+- Document error codes
+- Keep up to date
+
+### Infrastructure Documentation
+- Document architecture decisions
+- Maintain deployment runbooks
+- Update configuration guides
+
+## Development Tools
+
+### Recommended VS Code Extensions
+- Python
+- Docker
+- Kubernetes
+- YAML
+- GitLens
+
+### Recommended Tools
+- k9s - Kubernetes CLI
+- Lens - Kubernetes IDE
+- Postman - API testing
+- act - Test GitHub Actions locally
+
+## Project Maintenance
+
+### Regular Tasks
+- Update dependencies monthly
+- Review and close stale issues
+- Update documentation
+- Rotate secrets
+- Review access permissions
+
+### Version Updates
+1. Update pyproject.toml
+2. Update app/__init__.py
+3. Update helm/devops-demo/Chart.yaml
+4. Update CHANGELOG.md
+5. Create release branch
+
+## Resources
+
+### Documentation
+- [Main README](../README.md)
+- [API Documentation](API.md)
+- [Deployment Guide](DEPLOYMENT.md)
+- [GitFlow Guide](GITFLOW.md)
+
+### External Resources
+- [Python Flask](https://flask.palletsprojects.com/)
+- [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
+- [Helm Documentation](https://helm.sh/docs/)
+- [ArgoCD Documentation](https://argo-cd.readthedocs.io/)
+
+## Support
+
+For questions or issues:
+1. Check existing documentation
+2. Search closed issues
+3. Open new issue with template
+4. Provide detailed information
+
+---
+
+**Remember**: This is a demo project showcasing DevOps best practices. Feel free to adapt it to your needs!
