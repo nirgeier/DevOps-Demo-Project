@@ -151,5 +151,3 @@ jobs:
             git commit -m "chore: update image tag to $IMAGE_TAG [skip ci]"
             git push
           fi
-        env:
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
