@@ -1,0 +1,6 @@
+#!/bin/bash
+# Run tests before commit
+if [[ -d ".venv" ]]; then
+    source .venv/bin/activate
+    pytest tests/ -q || exit 1
+fi
