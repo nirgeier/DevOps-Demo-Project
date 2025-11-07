@@ -126,20 +126,8 @@ run_tests() {
 # Setup Git hooks (GitFlow)
 setup_git_hooks() {
     log_section "Setting Up Git Hooks"
-    
-    mkdir -p .git/hooks
-    
-    # Pre-commit hook
-    cat > .git/hooks/pre-commit << 'EOF'
-#!/bin/bash
-# Run tests before commit
-if [[ -d ".venv" ]]; then
-    source .venv/bin/activate
-    pytest tests/ -q || exit 1
-fi
-EOF
-    
-    chmod +x .git/hooks/pre-commit
+    git config core.hooksPath .githooks
+    chmod +x .git/hooks/*.sh
     log_info "✅ Git hooks configured"
 }
 
