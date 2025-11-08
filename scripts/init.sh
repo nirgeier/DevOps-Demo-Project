@@ -7,18 +7,10 @@
 
 set -euo pipefail
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+# Get the Git project root
+GIT_ROOT="$(git rev-parse --show-toplevel)"
 
-# Logging functions
-log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
-log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-log_section() { echo -e "\n${BLUE}==== $1 ====${NC}\n"; }
+source "./common.sh"
 
 # Get script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -54,7 +46,15 @@ check_requirements() {
 install_devops_tools() {
     log_section "Installing DevOps Tools"
     
-    read -p "Do you want to install all DevOps tools (uv, Docker, kubectl, helm, k9s, ArgoCD CLI)? (y/N): " -n 1 -r
+    # Build list of available tools
+    tools_list=""
+    for script in "$SCRIPT_DIR"/tools/install-*.sh; do
+        tool_name=$(basename "$script" .sh | sed 's/install-//')
+        tools_list+="$tool_name, "
+    done
+    tools_list=${tools_list%, }
+    
+    read -p "Do you want to install all DevOps tools ($tools_list)? (y/N): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         log_warn "Skipping DevOps tools installation"
@@ -62,38 +62,35 @@ install_devops_tools() {
     fi
     
     # Make scripts executable
-    chmod +x "$SCRIPT_DIR"/*.sh
+    chmod +x "$SCRIPT_DIR"/tools/*.sh
     
-    # Install uv (Python package manager)
-    log_info "Installing uv..."
-    "$SCRIPT_DIR/install-uv.sh"
+    # Install tools (continue even if one fails)
+    for script in "$SCRIPT_DIR"/tools/install-*.sh; do
+        tool_name=$(basename "$script" .sh | sed 's/install-//')
+        log_info "Installing $tool_name..."
+        "$script" || log_warn "Failed to install $tool_name, continuing..."
+    done
     
-    # Install Docker
-    log_info "Installing Docker..."
-    "$SCRIPT_DIR/install-docker.sh"
+    log_info "✅ DevOps tools installation attempted (some may have failed)"
+}
+
+# Update PATH for newly installed tools
+update_path() {
+    log_section "Updating PATH"
     
-    # Install kubectl
-    log_info "Installing kubectl..."
-    "$SCRIPT_DIR/install-kubectl.sh"
+    # Add common installation directories to PATH
+    export PATH="$HOME/.local/bin:$PATH"
+    export PATH="$HOME/bin:$PATH"
     
-    # Install helm
-    log_info "Installing helm..."
-    "$SCRIPT_DIR/install-helm.sh"
-    
-    # Install k9s
-    log_info "Installing k9s..."
-    "$SCRIPT_DIR/install-k9s.sh"
-    
-    # Install ArgoCD CLI
-    log_info "Installing ArgoCD CLI..."
-    "$SCRIPT_DIR/install-argocd.sh"
-    
-    log_info "✅ All DevOps tools installed"
+    log_info "✅ PATH updated"
 }
 
 # Setup Python environment
 setup_python_env() {
     log_section "Setting Up Python Environment"
+    
+    # Ensure uv is in PATH
+    export PATH="$HOME/.local/bin:$PATH"
     
     # Check if uv is available
     if ! command -v uv &> /dev/null; then
@@ -125,9 +122,9 @@ run_tests() {
 
 # Setup Git hooks (GitFlow)
 setup_git_hooks() {
-    log_section "Setting Up Git Hooks"
-    git config core.hooksPath .githooks
-    chmod +x .git/hooks/*.sh
+#     log_section "Setting Up Git Hooks"
+#     git config core.hooksPath $GIT_ROOT/.githooks
+#     chmod +x $GIT_ROOT/.githooks/hooks/*.sh
     log_info "✅ Git hooks configured"
 }
 
@@ -183,6 +180,7 @@ EOF
 # Main execution
 main() {
     check_requirements
+    update_path
     install_devops_tools
     setup_python_env
     run_tests

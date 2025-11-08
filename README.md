@@ -92,7 +92,7 @@ This project demonstrates a modern DevOps workflow implementing:
 ## 📦 Prerequisites
 
 - **Python 3.11+**
-- **Docker Engine** (for containerization)
+- **Docker** (install manually from https://docs.docker.com/get-docker/)
 - **kubectl** (for Kubernetes)
 - **Helm** (for Kubernetes package management)
 - **uv** (Python package manager)
@@ -162,14 +162,73 @@ docker build -f docker/Dockerfile -t devops-demo:latest .
 docker run -p 8080:8080 devops-demo:latest
 
 # Or use docker-compose
-docker-compose -f docker/docker-compose.yml up
+docker-compose -f docker/docker-compose.yml up -d
 ```
 
-### 4. Deploy to Kubernetes
+### 4. Build Helm Chart
+
+Validate and package the Helm chart for Kubernetes deployment:
 
 ```bash
-# Install with Helm
-helm install devops-demo helm/devops-demo
+# Lint the Helm chart for errors
+helm lint helm/devops-demo
+
+# Template the chart to see generated Kubernetes manifests
+helm template devops-demo helm/devops-demo
+
+# Package the chart into a .tgz file
+helm package helm/devops-demo
+
+# Validate the packaged chart
+helm lint devops-demo-*.tgz
+
+# Uninstall previous release if exists
+helm uninstall devops-demo-test --namespace devops-demo || true
+
+# Test the chart installation (dry-run)
+helm install devops-demo-test helm/devops-demo --namespace devops-demo --create-namespace 
+
+# Clean up test package
+rm devops-demo-*.tgz
+```
+
+**Helm Chart Details:**
+
+| Property  | Description |
+|-----------|-------------|
+| Chart Name | devops-demo |
+| Version | Defined in `helm/devops-demo/Chart.yaml` |
+| Values | Configurable via `helm/devops-demo/values.yaml` |
+| Templates | Kubernetes manifests in `helm/devops-demo/templates/` |
+
+**Common Helm Commands:**
+
+```bash
+# List all releases
+helm list -A
+
+# Get release status
+helm status devops-demo
+
+# Upgrade release
+helm upgrade devops-demo helm/devops-demo --namespace devops-demo 
+
+# Rollback release
+helm rollback devops-demo --namespace devops-demo
+
+# Uninstall release
+helm uninstall devops-demo --namespace devops-demo
+```
+
+### 5. Deploy to Kubernetes
+
+```bash
+# Install with Helm, updating or installing as needed
+helm upgrade                                     \
+       --install devops-demo helm/devops-demo    \
+       --namespace devops-demo                    \
+       --create-namespace                        \
+       --values helm/devops-demo/values.yaml
 
 # Or use ArgoCD
 kubectl apply -f argocd/namespace.yaml
@@ -211,7 +270,6 @@ DevOps-Demo-Project/
 │   ├── pre-push             # Branch naming validation
 │   ├── setup.sh             # Hooks installation script
 │   └── README.md            # Hooks documentation
-├── .github/                  # GitHub Actions
 │   └── workflows/
 │       ├── ci.yml           # Continuous Integration
 │       ├── cd.yml           # Continuous Deployment
