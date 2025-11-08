@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+#
+# Git Hook: post-push
+# Automatically opens GitHub PR creation page after successful push
+#
+# This hook helps streamline the GitFlow workflow by immediately
+# opening the PR creation interface when pushing feature/bugfix branches.
+#
+# Installation:
+#   git config core.hooksPath .githooks
+#
+
+set -e
+
+# ANSI color codes
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+BOLD='\033[1m'
+
+# Get current branch name
+current_branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
+
+# If we can't get branch name (detached HEAD), skip
+if [ -z "$current_branch" ]; then
+    exit 0
+fi
+
+# Only create PR suggestions for feature, bugfix, and hotfix branches
+# (not for main, develop, or release branches)
+if [[ $current_branch =~ ^(feature|bugfix|hotfix)/ ]]; then
+
+    # Get repository information
+    remote_url=$(git config --get remote.origin.url 2>/dev/null || echo "")
+
+    # Extract owner/repo from remote URL
+    if [[ $remote_url =~ github\.com[\/:]([^\/]+)\/([^\/\.]+) ]]; then
+        owner="${BASH_REMATCH[1]}"
+        repo="${BASH_REMATCH[2]}"
+
+        # Construct PR URL
+        pr_url="https://github.com/$owner/$repo/compare/main...$current_branch"
+
+        echo -e "\n${BLUE}🚀 Push successful!${NC}"
+        echo -e "${GREEN}📋 Ready to create Pull Request${NC}"
+        echo -e "${YELLOW}🌐 Opening PR creation page...${NC}"
+
+        # Try to open URL in default browser
+        if command -v open >/dev/null 2>&1; then
+            # macOS
+            open "$pr_url"
+        elif command -v xdg-open >/dev/null 2>&1; then
+            # Linux
+            xdg-open "$pr_url"
+        elif command -v start >/dev/null 2>&1; then
+            # Windows
+            start "$pr_url"
+        else
+            echo -e "${YELLOW}📋 Copy this URL to create your PR:${NC}"
+            echo -e "${BOLD}$pr_url${NC}"
+        fi
+
+        echo -e "\n${GREEN}✅ PR page opened in your browser${NC}"
+        echo -e "${BLUE}💡 Remember to:${NC}"
+        echo -e "   • Add a descriptive title"
+        echo -e "   • Include details about your changes"
+        echo -e "   • Request reviewers if needed"
+        echo -e "   • Link any related issues"
+
+    else
+        echo -e "\n${YELLOW}⚠️  Could not determine GitHub repository URL${NC}"
+        echo -e "${BLUE}💡 To create a PR manually, visit:${NC}"
+        echo -e "${BOLD}https://github.com/[owner]/[repo]/compare/main...$current_branch${NC}"
+    fi
+
+else
+    echo -e "\n${GREEN}✅ Push successful!${NC}"
+    echo -e "${BLUE}📍 Branch: $current_branch${NC}"
+fi

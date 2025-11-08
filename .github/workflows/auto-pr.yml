@@ -1,0 +1,86 @@
+name: Auto Create PR
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'bugfix/**'
+      - 'hotfix/**'
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip pr]')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get branch info
+      id: branch-info
+      run: |
+        BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+        BRANCH_TYPE=$(echo $BRANCH_NAME | cut -d'/' -f1)
+        BRANCH_DESC=$(echo $BRANCH_NAME | cut -d'/' -f2- | tr '_' ' ' | tr '-' ' ')
+
+        echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+        echo "branch_type=$BRANCH_TYPE" >> $GITHUB_OUTPUT
+        echo "branch_desc=$BRANCH_DESC" >> $GITHUB_OUTPUT
+
+    - name: Generate PR title
+      id: pr-title
+      run: |
+        BRANCH_TYPE="${{ steps.branch-info.outputs.branch_type }}"
+        BRANCH_DESC="${{ steps.branch-info.outputs.branch_desc }}"
+
+        case $BRANCH_TYPE in
+          "feature") echo "title=✨ Feature: $BRANCH_DESC" >> $GITHUB_OUTPUT ;;
+          "bugfix") echo "title=🐛 Bugfix: $BRANCH_DESC" >> $GITHUB_OUTPUT ;;
+          "hotfix") echo "title=🔥 Hotfix: $BRANCH_DESC" >> $GITHUB_OUTPUT ;;
+        esac
+
+    - name: Determine base branch
+      id: base-branch
+      run: |
+        BRANCH_TYPE="${{ steps.branch-info.outputs.branch_type }}"
+        if [ "$BRANCH_TYPE" = "hotfix" ]; then
+          echo "base=main" >> $GITHUB_OUTPUT
+        else
+          echo "base=develop" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Check if PR already exists
+      id: check-pr
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        BRANCH_NAME="${{ steps.branch-info.outputs.branch_name }}"
+        PR_EXISTS=$(gh pr list --head "$BRANCH_NAME" --json number --jq 'length')
+        echo "pr_exists=$PR_EXISTS" >> $GITHUB_OUTPUT
+
+    - name: Create Pull Request
+      if: steps.check-pr.outputs.pr_exists == '0'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        BRANCH_NAME="${{ steps.branch-info.outputs.branch_name }}"
+        TITLE="${{ steps.pr-title.outputs.title }}"
+        BASE="${{ steps.base-branch.outputs.base }}"
+
+        gh pr create --title "$TITLE" --body "Automated PR creation for branch: $BRANCH_NAME" --base "$BASE" --head "$BRANCH_NAME"
+
+    - name: Comment on existing PR
+      if: steps.check-pr.outputs.pr_exists != '0'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        BRANCH_NAME="${{ steps.branch-info.outputs.branch_name }}"
+        PR_NUMBER=$(gh pr list --head "$BRANCH_NAME" --json number --jq '.[0].number')
+        gh pr comment $PR_NUMBER --body "🤖 **Automated Update**: Branch has been updated with new commits."
+
+    - name: Notify on PR creation
+      if: steps.check-pr.outputs.pr_exists == '0'
+      run: |
+        echo "🎉 Pull Request created successfully!"
+        echo "Title: ${{ steps.pr-title.outputs.title }}"
+        echo "Branch: ${{ steps.branch-info.outputs.branch_name }}"
