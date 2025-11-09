@@ -131,50 +131,47 @@ setup_git_hooks() {
 # Display next steps
 show_next_steps() {
     log_section "Setup Complete! 🎉"
-    
-    cat << EOF
-${GREEN}Your DevOps Demo Project is ready!${NC}
 
-${YELLOW}Next Steps:${NC}
-
-1. ${BLUE}Activate the Python environment:${NC}
-   source .venv/bin/activate
-
-2. ${BLUE}Run the application locally:${NC}
-   python app/main.py
-   # Or with gunicorn:
-   gunicorn --bind 0.0.0.0:8080 app.main:app
-
-3. ${BLUE}Build and run with Docker:${NC}
-   docker build -f docker/Dockerfile -t devops-demo:latest .
-   docker run -p 8080:8080 devops-demo:latest
-   # Or use docker-compose:
-   docker-compose -f docker/docker-compose.yml up
-
-4. ${BLUE}Run tests:${NC}
-   pytest tests/ -v --cov=app
-
-5. ${BLUE}Access the application:${NC}
-   http://localhost:8080
-
-${YELLOW}Available Endpoints:${NC}
-   GET  /              - Welcome message
-   GET  /health        - Health check
-   GET  /ready         - Readiness check
-   GET  /api/info      - Application info
-   POST /api/echo      - Echo endpoint
-
-${YELLOW}GitFlow Branches:${NC}
-   - main       : Production-ready code
-   - develop    : Integration branch
-   - feature/*  : New features
-   - release/*  : Release preparation
-   - hotfix/*   : Production fixes
-
-${YELLOW}Documentation:${NC}
-   See README.md for detailed information
-
-EOF
+    echo -e "${GREEN}Your DevOps Demo Project is ready!${NC}"
+    echo ""
+    echo -e "${YELLOW}Next Steps:${NC}"
+    echo ""
+    echo -e "1. ${BLUE}Activate the Python environment:${NC}"
+    echo "   source .venv/bin/activate"
+    echo ""
+    echo -e "2. ${BLUE}Run the application locally:${NC}"
+    echo "   python app/main.py"
+    echo "   # Or with gunicorn:"
+    echo "   gunicorn --bind 0.0.0.0:8080 app.main:app"
+    echo ""
+    echo -e "3. ${BLUE}Build and run with Docker:${NC}"
+    echo "   docker build -f docker/Dockerfile -t devops-demo:latest ."
+    echo "   docker run -p 8080:8080 devops-demo:latest"
+    echo "   # Or use docker-compose:"
+    echo "   docker-compose -f docker/docker-compose.yml up"
+    echo ""
+    echo -e "4. ${BLUE}Run tests:${NC}"
+    echo "   pytest tests/ -v --cov=app"
+    echo ""
+    echo -e "5. ${BLUE}Access the application:${NC}"
+    echo "   http://localhost:8080"
+    echo ""
+    echo -e "${YELLOW}Available Endpoints:${NC}"
+    echo "   GET  /              - Welcome message"
+    echo "   GET  /health        - Health check"
+    echo "   GET  /ready         - Readiness check"
+    echo "   GET  /api/info      - Application info"
+    echo "   POST /api/echo      - Echo endpoint"
+    echo ""
+    echo -e "${YELLOW}GitFlow Branches:${NC}"
+    echo "   - main       : Production-ready code"
+    echo "   - develop    : Integration branch"
+    echo "   - feature/*  : New features"
+    echo "   - release/*  : Release preparation"
+    echo "   - hotfix/*   : Production fixes"
+    echo ""
+    echo -e "${YELLOW}Documentation:${NC}"
+    echo "   See README.md for detailed information"
 }
 
 # Main execution
