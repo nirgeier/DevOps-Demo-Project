@@ -67,25 +67,25 @@ pytest tests/ -v --cov=app
 
 ```bash
 # Build locally
-docker build -f docker/Dockerfile -t devops-demo:latest .
+docker build -f docker/Dockerfile -t ghcr.io/nirgeier/devops-demo-project:latest .
 
 # Build for multiple platforms
 docker buildx build --platform linux/amd64,linux/arm64 \
   -f docker/Dockerfile \
-  -t devops-demo:latest .
+  -t ghcr.io/nirgeier/devops-demo-project:latest .
 ```
 
 ### Run Container
 
 ```bash
 # Simple run
-docker run -p 8080:8080 devops-demo:latest
+docker run -p 8080:8080 ghcr.io/nirgeier/devops-demo-project:latest
 
 # With environment variables
 docker run -p 8080:8080 \
   -e APP_VERSION=1.0.0 \
   -e ENVIRONMENT=production \
-  devops-demo:latest
+  ghcr.io/nirgeier/devops-demo-project:latest
 
 # With docker-compose
 docker-compose -f docker/docker-compose.yml up -d

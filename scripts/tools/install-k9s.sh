@@ -71,6 +71,7 @@ chmod +x k9s
 # Determine install location
 mkdir -p "$INSTALL_DIR"
 export PATH="$INSTALL_DIR:$PATH"
+log_info "k9s will be installed to: $INSTALL_DIR"
 rm -f "$INSTALL_DIR/k9s"
 mv k9s "$INSTALL_DIR/"
 

@@ -156,10 +156,10 @@ Visit: http://localhost:8080
 
 ```bash
 # Build the image
-docker build -f docker/Dockerfile -t devops-demo:latest .
+docker build -f docker/Dockerfile -t ghcr.io/nirgeier/devops-demo-project:latest .
 
 # Run the container
-docker run -p 8080:8080 devops-demo:latest
+docker run -p 8080:8080 ghcr.io/nirgeier/devops-demo-project:latest
 
 # Or use docker-compose
 docker-compose -f docker/docker-compose.yml up -d
