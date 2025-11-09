@@ -1,5 +1,8 @@
 # DevOps Demo Project 🚀
 
+gggg
+
+
 A complete DevOps CI/CD pipeline demonstration project featuring Python Flask application, Docker containerization, Kubernetes deployment with Helm, ArgoCD GitOps, and automated GitHub Actions workflows.
 
 ![DevOps Pipeline](https://img.shields.io/badge/DevOps-Pipeline-blue)
