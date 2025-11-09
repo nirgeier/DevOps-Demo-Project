@@ -5,7 +5,7 @@
 ###############################################################################
 
 # Common variables
-INSTALL_DIR="/usr/local/bin"
+INSTALL_DIR="/usr/local/bin
 
 # Colors for output
 RED='\033[0;31m'
