@@ -10,7 +10,7 @@ set -euo pipefail
 # Get the Git project root
 GIT_ROOT="$(git rev-parse --show-toplevel)"
 
-source "./common.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # Get script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
