@@ -166,7 +166,12 @@ cd DevOps-Demo-Project
 
 ```bash
 # Activate virtual environment
+# On Unix/macOS/Linux:
 source .venv/bin/activate
+# On Windows (Git Bash):
+source .venv/Scripts/activate
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
 
 # Run the application
 python app/main.py
@@ -282,14 +287,25 @@ black app/ tests/
 ### Local Development
 
 ```bash
-# Create virtual environment
+# Create virtual environment (with uv - recommended)
 uv venv
 
-# Activate environment
-source .venv/bin/activate
+# OR create with standard Python venv
+python -m venv .venv
 
-# Install dependencies
+# Activate environment
+# On Unix/macOS/Linux:
+source .venv/bin/activate
+# On Windows (Git Bash):
+source .venv/Scripts/activate
+# On Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+
+# Install dependencies (with uv - faster)
 uv pip install -e ".[dev]"
+
+# OR install with pip (standard)
+python -m pip install -e ".[dev]"
 
 # Run development server
 python app/main.py

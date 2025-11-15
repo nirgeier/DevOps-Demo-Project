@@ -122,13 +122,23 @@ setup_python_env() {
         fi
         
         python3 -m venv .venv
-        source .venv/bin/activate
+        # Cross-platform activation
+        if [[ -f ".venv/bin/activate" ]]; then
+            source .venv/bin/activate
+        elif [[ -f ".venv/Scripts/activate" ]]; then
+            source .venv/Scripts/activate
+        fi
         pip install --upgrade pip
         pip install -e ".[dev]"
     else
         log_info "Creating Python virtual environment with uv..."
         uv venv
-        source .venv/bin/activate
+        # Cross-platform activation
+        if [[ -f ".venv/bin/activate" ]]; then
+            source .venv/bin/activate
+        elif [[ -f ".venv/Scripts/activate" ]]; then
+            source .venv/Scripts/activate
+        fi
         uv pip install -e ".[dev]"
     fi
     
@@ -139,8 +149,14 @@ setup_python_env() {
 run_tests() {
     log_section "Running Tests"
     
-    if [[ -d ".venv" ]]; then
+    # Cross-platform activation check
+    if [[ -f ".venv/bin/activate" ]]; then
         source .venv/bin/activate
+        log_info "Running pytest..."
+        pytest tests/ -v --cov=app --cov-report=term
+        log_info "✅ Tests passed"
+    elif [[ -f ".venv/Scripts/activate" ]]; then
+        source .venv/Scripts/activate
         log_info "Running pytest..."
         pytest tests/ -v --cov=app --cov-report=term
         log_info "✅ Tests passed"
@@ -160,7 +176,12 @@ setup_git_hooks() {
 #!/bin/bash
 # Run tests before commit
 if [[ -d ".venv" ]]; then
-    source .venv/bin/activate
+    # Cross-platform activation
+    if [[ -f ".venv/bin/activate" ]]; then
+        source .venv/bin/activate
+    elif [[ -f ".venv/Scripts/activate" ]]; then
+        source .venv/Scripts/activate
+    fi
     pytest tests/ -q || exit 1
 fi
 EOF
@@ -179,7 +200,12 @@ ${GREEN}Your DevOps Demo Project is ready!${NC}
 ${YELLOW}Next Steps:${NC}
 
 1. ${BLUE}Activate the Python environment:${NC}
+   # On Unix/macOS/Linux:
    source .venv/bin/activate
+   # On Windows (Git Bash):
+   source .venv/Scripts/activate
+   # On Windows (PowerShell):
+   .venv\Scripts\Activate.ps1
 
 2. ${BLUE}Verify your setup:${NC}
    ./scripts/doctor.sh              # Quick health check all tools
