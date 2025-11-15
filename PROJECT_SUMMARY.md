@@ -45,10 +45,32 @@ DevOps-Demo-Project/
 │
 ├── 🛠️  Scripts
 │   ├── init.sh                         # Project initialization
+│   ├── doctor.sh                       # Health check all tools
+│   ├── verify-setup.sh                 # Comprehensive verification
 │   ├── install-kubectl.sh              # Install kubectl
 │   ├── install-helm.sh                 # Install Helm
 │   ├── install-k9s.sh                  # Install k9s
-│   └── install-uv.sh                   # Install uv
+│   ├── install-uv.sh                   # Install uv
+│   ├── install-docker.sh               # Install Docker
+│   ├── install-gh.sh                   # Install GitHub CLI
+│   ├── install-openshift.sh            # Install OpenShift CLI
+│   ├── install-argocd.sh               # Install ArgoCD CLI
+│   ├── gh-create-pr.sh                 # Create pull requests
+│   ├── gh-release.sh                   # Automated releases
+│   ├── gh-helpers.sh                   # GitHub CLI helpers
+│   ├── gh-doctor.sh                    # GitHub CLI diagnostics
+│   ├── openshift-doctor.sh             # OpenShift CLI diagnostics
+│   └── build-multiplatform.sh          # Multi-arch Docker builds
+│
+├── 🎓 Study Materials
+│   ├── gh-study/                       # GitHub CLI learning
+│   │   ├── README.md                   # Complete guide
+│   │   ├── QUICKSTART.md               # Quick reference
+│   │   └── labs/                       # 6 hands-on labs
+│   └── openshift-study/                # OpenShift CLI learning
+│       ├── README.md                   # Complete guide
+│       ├── QUICKSTART.md               # Quick reference
+│       └── labs/                       # 6 hands-on labs
 │
 ├── 📚 Documentation
 │   ├── README.md                       # Main documentation
@@ -89,6 +111,10 @@ DevOps-Demo-Project/
 - ✅ Code coverage reporting
 - ✅ Container image signing & attestation
 - ✅ Deployment to GitHub Container Registry
+- ✅ GitHub CLI integration & automation
+- ✅ OpenShift CLI support (optional)
+- ✅ Comprehensive diagnostic tools
+- ✅ Automated tool installation scripts
 
 ### Testing & Quality ✅
 - ✅ Unit tests with pytest
@@ -114,7 +140,8 @@ DevOps-Demo-Project/
 ```
 
 This will:
-- Install DevOps tools (kubectl, helm, k9s, uv)
+- Install DevOps tools (kubectl, helm, k9s, uv, docker)
+- Optionally install GitHub CLI (gh) and OpenShift CLI (oc)
 - Set up Python virtual environment
 - Install dependencies
 - Run tests
@@ -206,6 +233,64 @@ For CI/CD to work, you need to set up GitHub Container Registry:
 1. Go to GitHub → Settings → Developer settings → Personal access tokens
 2. Create token with `packages:write` permission
 3. Token is automatically available as `GITHUB_TOKEN` in Actions
+
+## 🔧 Additional Tools & Automation
+
+### GitHub CLI Integration
+
+```bash
+# Install GitHub CLI
+./scripts/install-gh.sh
+
+# Authenticate
+gh auth login
+
+# Create pull request from current branch
+./scripts/gh-create-pr.sh
+
+# Automated release workflow
+./scripts/gh-release.sh 1.0.0
+
+# Check GitHub CLI diagnostics
+./scripts/gh-doctor.sh
+```
+
+**GitHub CLI Study Guide**: See [gh-study/README.md](gh-study/README.md) for complete documentation and 6 hands-on labs.
+
+### OpenShift CLI Integration
+
+```bash
+# Install OpenShift CLI
+./scripts/install-openshift.sh
+
+# Authenticate with cluster
+oc login https://api.your-cluster.example.com:6443
+
+# Deploy this application
+oc new-project devops-demo
+oc new-app python:3.9~https://github.com/nirgeier/DevOps-Demo-Project
+
+# Check OpenShift CLI diagnostics
+./scripts/openshift-doctor.sh
+```
+
+**OpenShift CLI Study Guide**: See [openshift-study/README.md](openshift-study/README.md) for complete documentation and 6 hands-on labs.
+
+### Health Check & Diagnostics
+
+```bash
+# Check all tools at once
+./scripts/doctor.sh
+
+# Check specific tool
+./scripts/doctor.sh gh          # GitHub CLI
+./scripts/doctor.sh oc          # OpenShift CLI
+./scripts/doctor.sh docker      # Docker
+./scripts/doctor.sh quick       # Quick essential check
+
+# Comprehensive project verification
+./scripts/verify-setup.sh
+```
 
 ## 🎓 Next Steps
 
@@ -320,7 +405,10 @@ All documentation is organized and comprehensive:
 - **[docs/GITFLOW.md](docs/GITFLOW.md)** - GitFlow workflow details
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history
+- **[PROJECT_IMPROVEMENTS.md](PROJECT_IMPROVEMENTS.md)** - Detailed improvements log
 - **[argocd/README.md](argocd/README.md)** - ArgoCD setup
+- **[gh-study/README.md](gh-study/README.md)** - GitHub CLI complete guide (8 labs)
+- **[openshift-study/README.md](openshift-study/README.md)** - OpenShift CLI complete guide (6 labs)
 
 ## 🎉 Project Highlights
 
@@ -369,6 +457,9 @@ This project demonstrates:
 - GitHub Actions CI/CD
 - GitFlow branching model
 - Automated testing strategies
+- GitHub CLI automation and workflows (with hands-on labs)
+- OpenShift CLI for enterprise container platform (with hands-on labs)
+- DevOps diagnostic and troubleshooting tools
 
 ## 🆘 Support
 

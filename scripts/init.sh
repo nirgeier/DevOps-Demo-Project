@@ -54,7 +54,7 @@ check_requirements() {
 install_devops_tools() {
     log_section "Installing DevOps Tools"
     
-    read -p "Do you want to install kubectl, helm, k9s, uv, Docker, and ArgoCD CLI? (y/N): " -n 1 -r
+    read -p "Do you want to install kubectl, helm, k9s, gh, uv, Docker, and ArgoCD CLI? (y/N): " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         log_warn "Skipping DevOps tools installation"
@@ -83,6 +83,18 @@ install_devops_tools() {
     # Install k9s
     log_info "Installing k9s..."
     "$SCRIPT_DIR/install-k9s.sh"
+    
+    # Install GitHub CLI
+    log_info "Installing GitHub CLI (gh)..."
+    "$SCRIPT_DIR/install-gh.sh"
+    
+    # Install OpenShift CLI (optional)
+    read -p "Do you want to install OpenShift CLI (oc)? (y/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        log_info "Installing OpenShift CLI..."
+        "$SCRIPT_DIR/install-openshift.sh"
+    fi
     
     # Install ArgoCD CLI (optional)
     read -p "Do you want to install ArgoCD CLI? (y/N): " -n 1 -r
@@ -169,22 +181,48 @@ ${YELLOW}Next Steps:${NC}
 1. ${BLUE}Activate the Python environment:${NC}
    source .venv/bin/activate
 
-2. ${BLUE}Run the application locally:${NC}
+2. ${BLUE}Verify your setup:${NC}
+   ./scripts/doctor.sh              # Quick health check all tools
+   ./scripts/verify-setup.sh        # Comprehensive verification
+
+3. ${BLUE}Run the application locally:${NC}
    python app/main.py
    # Or with gunicorn:
    gunicorn --bind 0.0.0.0:8080 app.main:app
 
-3. ${BLUE}Build and run with Docker:${NC}
+4. ${BLUE}Build and run with Docker:${NC}
    docker build -f docker/Dockerfile -t devops-demo:latest .
    docker run -p 8080:8080 devops-demo:latest
    # Or use docker-compose:
    docker-compose -f docker/docker-compose.yml up
 
-4. ${BLUE}Run tests:${NC}
+5. ${BLUE}Run tests:${NC}
    pytest tests/ -v --cov=app
 
-5. ${BLUE}Access the application:${NC}
+6. ${BLUE}Access the application:${NC}
    http://localhost:8080
+
+${YELLOW}DevOps Tools Quick Check:${NC}
+   ./scripts/doctor.sh                # All tools
+   ./scripts/doctor.sh gh             # GitHub CLI only
+   ./scripts/doctor.sh oc             # OpenShift CLI only
+   ./scripts/doctor.sh quick          # Essential tools only
+
+${YELLOW}GitHub CLI Quick Start:${NC}
+   gh auth login                      # Authenticate with GitHub
+   gh repo view                       # View repository info
+   ./scripts/gh-doctor.sh             # Detailed diagnostics
+   ./scripts/gh-create-pr.sh          # Create PR from current branch
+   ./scripts/gh-release.sh 1.0.0      # Create new release
+   cd gh-study/labs && ./lab1-setup.sh  # Start GitHub CLI labs
+
+${YELLOW}OpenShift CLI Quick Start (if installed):${NC}
+   oc login <server-url>              # Authenticate with OpenShift
+   oc new-project my-project          # Create new project
+   oc new-app python:3.9~<repo>       # Deploy from source
+   oc get all                         # View all resources
+   ./scripts/openshift-doctor.sh      # Detailed diagnostics
+   cd openshift-study/labs && ./lab1-setup.sh  # Start OpenShift labs
 
 ${YELLOW}Available Endpoints:${NC}
    GET  /              - Welcome message
@@ -201,7 +239,12 @@ ${YELLOW}GitFlow Branches:${NC}
    - hotfix/*   : Production fixes
 
 ${YELLOW}Documentation:${NC}
-   See README.md for detailed information
+   • Main README:           README.md
+   • GitHub CLI Guide:      gh-study/README.md
+   • OpenShift Guide:       openshift-study/README.md
+   • Project Improvements:  PROJECT_IMPROVEMENTS.md
+   • Quick References:      gh-study/QUICKSTART.md
+                            openshift-study/QUICKSTART.md
 
 EOF
 }
