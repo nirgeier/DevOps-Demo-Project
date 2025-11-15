@@ -1,44 +1,113 @@
 #!/usr/bin/env bash
 
 ###############################################################################
-# Install OpenShift CLI (oc)
-# This script installs the OpenShift CLI tool for macOS, Linux, and Windows
+# OpenShift CLI (oc) Installation Script
+# Installs the latest version of the OpenShift CLI tool
 ###############################################################################
 
 set -euo pipefail
 
-# Colors for output
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Logging functions
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_section() { echo -e "\n${BLUE}==== $1 ====${NC}\n"; }
 
-# Detect OS and architecture
-detect_platform() {
-    OS=$(uname -s | tr '[:upper:]' '[:lower:]')
-    ARCH=$(uname -m)
-    
-    case "$OS" in
-        darwin)
-            OS="mac"
+log_section "OpenShift CLI (oc) Installation"
+
+# Detect OS
+detect_os() {
+    case "$(uname -s)" in
+        Darwin*)
+            OS="macOS"
             ;;
-        linux)
-            OS="linux"
+        Linux*)
+            OS="Linux"
             ;;
-        mingw*|msys*|cygwin*)
-            OS="windows"
+        MINGW*|MSYS*|CYGWIN*)
+            OS="Windows"
+            ;;
+        *)
+            OS="Unknown"
             ;;
     esac
+    log_info "Detected OS: $OS"
+}
+
+# Check if oc is already installed
+check_existing() {
+    if command -v oc &> /dev/null; then
+        CURRENT_VERSION=$(oc version --client -o json 2>/dev/null | grep -o '"gitVersion":"[^"]*"' | cut -d'"' -f4 || echo "unknown")
+        log_warn "OpenShift CLI is already installed: $CURRENT_VERSION"
+        read -p "Do you want to reinstall/upgrade? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            log_info "Installation cancelled"
+            exit 0
+        fi
+    fi
+}
+
+# Install on macOS
+install_macos() {
+    log_info "Installing OpenShift CLI on macOS..."
     
-    case "$ARCH" in
-        x86_64|amd64)
+    if command -v brew &> /dev/null; then
+        log_info "Using Homebrew..."
+        brew install openshift-cli
+    else
+        log_warn "Homebrew not found. Installing manually..."
+        
+        # Download latest oc client
+        log_info "Downloading latest OpenShift CLI..."
+        TEMP_DIR=$(mktemp -d)
+        cd "$TEMP_DIR"
+        
+        # Determine architecture
+        if [[ $(uname -m) == "arm64" ]]; then
+            ARCH="arm64"
+        else
+            ARCH="amd64"
+        fi
+        
+        OC_URL="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-mac-${ARCH}.tar.gz"
+        
+        curl -LO "$OC_URL"
+        tar -xzf openshift-client-mac-${ARCH}.tar.gz
+        
+        # Install to /usr/local/bin
+        sudo mv oc /usr/local/bin/
+        sudo chmod +x /usr/local/bin/oc
+        
+        # Install kubectl symlink if it doesn't exist
+        if ! command -v kubectl &> /dev/null; then
+            sudo mv kubectl /usr/local/bin/ 2>/dev/null || true
+            sudo chmod +x /usr/local/bin/kubectl 2>/dev/null || true
+        fi
+        
+        # Cleanup
+        cd -
+        rm -rf "$TEMP_DIR"
+    fi
+}
+
+# Install on Linux
+install_linux() {
+    log_info "Installing OpenShift CLI on Linux..."
+    
+    TEMP_DIR=$(mktemp -d)
+    cd "$TEMP_DIR"
+    
+    # Determine architecture
+    ARCH=$(uname -m)
+    case $ARCH in
+        x86_64)
             ARCH="amd64"
             ;;
         aarch64|arm64)
@@ -50,114 +119,67 @@ detect_platform() {
             ;;
     esac
     
-    log_info "Detected platform: $OS-$ARCH"
-}
-
-# Check if oc is already installed
-check_existing() {
-    if command -v oc &> /dev/null; then
-        CURRENT_VERSION=$(oc version --client 2>/dev/null | grep "Client Version" | awk '{print $3}' || echo "unknown")
-        log_warn "OpenShift CLI is already installed: $CURRENT_VERSION"
-        read -p "Do you want to reinstall? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            log_info "Skipping installation"
-            exit 0
-        fi
-    fi
-}
-
-# Install on macOS using Homebrew
-install_macos() {
-    log_section "Installing OpenShift CLI on macOS"
+    OC_URL="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux-${ARCH}.tar.gz"
     
-    if command -v brew &> /dev/null; then
-        log_info "Using Homebrew to install OpenShift CLI..."
-        brew install openshift-cli
-    else
-        log_info "Homebrew not found. Installing from source..."
-        install_from_source
-    fi
-}
-
-# Install on Linux
-install_linux() {
-    log_section "Installing OpenShift CLI on Linux"
-    install_from_source
-}
-
-# Install from source (cross-platform)
-install_from_source() {
-    log_info "Installing OpenShift CLI from official source..."
-    
-    # Create temporary directory
-    TMP_DIR=$(mktemp -d)
-    cd "$TMP_DIR"
-    
-    # Download URL (using stable version)
-    BASE_URL="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable"
-    
-    case "$OS" in
-        mac)
-            if [ "$ARCH" = "arm64" ]; then
-                FILE="openshift-client-mac-arm64.tar.gz"
-            else
-                FILE="openshift-client-mac.tar.gz"
-            fi
-            ;;
-        linux)
-            if [ "$ARCH" = "arm64" ]; then
-                FILE="openshift-client-linux-arm64.tar.gz"
-            else
-                FILE="openshift-client-linux.tar.gz"
-            fi
-            ;;
-        windows)
-            FILE="openshift-client-windows.zip"
-            ;;
-    esac
-    
-    log_info "Downloading from $BASE_URL/$FILE..."
-    
-    if ! curl -LO "$BASE_URL/$FILE"; then
-        log_error "Failed to download OpenShift CLI"
-        cd - > /dev/null
-        rm -rf "$TMP_DIR"
-        exit 1
-    fi
-    
-    # Extract
-    log_info "Extracting..."
-    if [[ "$FILE" == *.tar.gz ]]; then
-        tar -xzf "$FILE"
-    elif [[ "$FILE" == *.zip ]]; then
-        unzip "$FILE"
-    fi
+    log_info "Downloading from: $OC_URL"
+    curl -LO "$OC_URL"
+    tar -xzf openshift-client-linux-${ARCH}.tar.gz
     
     # Install to /usr/local/bin
-    log_info "Installing to /usr/local/bin..."
-    if [ -w /usr/local/bin ]; then
-        mv oc /usr/local/bin/
-        chmod +x /usr/local/bin/oc
-    else
-        sudo mv oc /usr/local/bin/
-        sudo chmod +x /usr/local/bin/oc
-    fi
+    sudo mv oc /usr/local/bin/
+    sudo chmod +x /usr/local/bin/oc
     
-    # Also install kubectl if present
-    if [ -f kubectl ]; then
-        if [ -w /usr/local/bin ]; then
-            mv kubectl /usr/local/bin/
-            chmod +x /usr/local/bin/kubectl
-        else
-            sudo mv kubectl /usr/local/bin/
-            sudo chmod +x /usr/local/bin/kubectl
-        fi
+    # Install kubectl symlink if it doesn't exist
+    if ! command -v kubectl &> /dev/null; then
+        sudo mv kubectl /usr/local/bin/ 2>/dev/null || true
+        sudo chmod +x /usr/local/bin/kubectl 2>/dev/null || true
     fi
     
     # Cleanup
-    cd - > /dev/null
-    rm -rf "$TMP_DIR"
+    cd -
+    rm -rf "$TEMP_DIR"
+}
+
+# Install on Windows
+install_windows() {
+    log_error "Windows installation requires manual steps:"
+    echo ""
+    echo "1. Download oc.exe from:"
+    echo "   https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-windows.zip"
+    echo ""
+    echo "2. Extract the zip file"
+    echo "3. Add the directory to your PATH"
+    echo ""
+    echo "Or use Chocolatey:"
+    echo "   choco install openshift-cli"
+    exit 1
+}
+
+# Setup completion
+setup_completion() {
+    log_info "Setting up shell completion..."
+    
+    case "$SHELL" in
+        */bash)
+            COMPLETION_DIR="/usr/local/etc/bash_completion.d"
+            if [[ ! -d "$COMPLETION_DIR" ]]; then
+                sudo mkdir -p "$COMPLETION_DIR"
+            fi
+            oc completion bash | sudo tee "$COMPLETION_DIR/oc" > /dev/null
+            log_info "Bash completion installed. Reload your shell with: source ~/.bashrc"
+            ;;
+        */zsh)
+            COMPLETION_DIR="/usr/local/share/zsh/site-functions"
+            if [[ ! -d "$COMPLETION_DIR" ]]; then
+                sudo mkdir -p "$COMPLETION_DIR"
+            fi
+            oc completion zsh | sudo tee "$COMPLETION_DIR/_oc" > /dev/null
+            log_info "Zsh completion installed. Reload your shell with: source ~/.zshrc"
+            ;;
+        *)
+            log_warn "Unknown shell. Manual completion setup may be required."
+            ;;
+    esac
 }
 
 # Verify installation
@@ -165,43 +187,91 @@ verify_installation() {
     log_section "Verifying Installation"
     
     if command -v oc &> /dev/null; then
-        VERSION=$(oc version --client 2>/dev/null | grep "Client Version" | awk '{print $3}' || echo "unknown")
-        log_info "✅ OpenShift CLI installed successfully!"
+        VERSION=$(oc version --client -o json 2>/dev/null | grep -o '"gitVersion":"[^"]*"' | cut -d'"' -f4 || oc version --client 2>/dev/null | head -1 || echo "installed")
+        log_info "✅ OpenShift CLI installed successfully"
         log_info "Version: $VERSION"
         
-        # Show basic help
-        echo ""
-        log_info "Quick start:"
-        echo "  oc login <cluster-url>        # Login to OpenShift cluster"
-        echo "  oc new-project <name>         # Create new project"
-        echo "  oc get all                    # View all resources"
-        echo "  oc --help                     # Show help"
-        echo ""
-        log_info "Run './scripts/openshift-doctor.sh' for detailed diagnostics"
+        # Check kubectl compatibility
+        if command -v kubectl &> /dev/null; then
+            KUBECTL_VERSION=$(kubectl version --client -o json 2>/dev/null | grep -o '"gitVersion":"[^"]*"' | cut -d'"' -f4 || echo "installed")
+            log_info "kubectl is also available: $KUBECTL_VERSION"
+        fi
+        
+        return 0
     else
-        log_error "❌ Installation failed - oc command not found"
-        exit 1
+        log_error "❌ OpenShift CLI installation failed"
+        return 1
     fi
 }
 
-# Main execution
-main() {
-    log_section "OpenShift CLI Installation"
+# Display next steps
+show_next_steps() {
+    log_section "Installation Complete! 🎉"
     
-    detect_platform
+    cat << 'EOF'
+OpenShift CLI (oc) is ready to use!
+
+Next Steps:
+
+1. Authenticate with your OpenShift cluster:
+   oc login https://api.your-cluster.example.com:6443
+
+   Or get login command from web console:
+   - Click your username (top right)
+   - Click "Copy login command"
+   - Click "Display Token"
+   - Copy and paste the oc login command
+
+2. Verify authentication:
+   oc whoami
+   oc whoami --show-server
+
+3. List your projects:
+   oc projects
+
+4. Switch to a project:
+   oc project <project-name>
+
+5. Create a new project:
+   oc new-project my-project
+
+6. Deploy an application:
+   oc new-app python:3.9~https://github.com/your/repo
+
+7. Start learning:
+   cd openshift-study/labs
+   ./lab1-setup.sh
+
+Common Commands:
+   oc get pods              # List pods
+   oc get all               # List all resources
+   oc logs <pod>            # View logs
+   oc describe pod <pod>    # Describe pod
+   oc status                # Project status
+
+Resources:
+   • OpenShift Docs: https://docs.openshift.com/
+   • Learning Portal: https://learn.openshift.com/
+   • Study Guide: openshift-study/README.md
+   • Interactive Labs: openshift-study/labs/
+
+EOF
+}
+
+# Main installation
+main() {
+    detect_os
     check_existing
     
-    case "$OS" in
-        mac)
+    case $OS in
+        macOS)
             install_macos
             ;;
-        linux)
+        Linux)
             install_linux
             ;;
-        windows)
-            log_error "Please install OpenShift CLI manually on Windows"
-            log_info "Download from: https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/"
-            exit 1
+        Windows)
+            install_windows
             ;;
         *)
             log_error "Unsupported operating system: $OS"
@@ -209,7 +279,13 @@ main() {
             ;;
     esac
     
-    verify_installation
+    if verify_installation; then
+        setup_completion
+        show_next_steps
+    else
+        log_error "Installation verification failed"
+        exit 1
+    fi
 }
 
 # Run main function
