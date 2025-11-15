@@ -71,9 +71,6 @@ jobs:
     permissions:
       contents: read
       actions: write
-    strategy:
-      matrix:
-        platform: [linux/amd64, linux/arm64]
     
     steps:
       - name: Checkout code
@@ -85,14 +82,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
-      - name: Build Docker image
+      - name: Build Docker image (multi-platform)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./docker/Dockerfile
           push: false
-          platforms: ${{ matrix.platform }}
-          tags: devops-demo:test-${{ matrix.platform }}
+          platforms: linux/amd64,linux/arm64
+          tags: devops-demo:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
   
